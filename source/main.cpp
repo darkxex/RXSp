@@ -90,7 +90,7 @@ bool	isFileExist(const char *file)
 const int SCREEN_WIDTH = 1280;
 const int SCREEN_HEIGHT = 720;
 enum states { selectmanga, readmanga,selectconsole };
-enum statesrom { snesrom, gbarom,gbcrom,gbrom,nesrom,genesisrom,psxntsc,psxpal,n64rom,pcenginerom,neogeorom,mastersystemrom,dreamcastrom,commodore64rom };
+enum statesrom { snesrom, gbarom,gbcrom,gbrom,nesrom,genesisrom,psxntsc,psxntscj,psxpal,n64rom,pcenginerom,neogeorom,mastersystemrom,dreamcastrom,commodore64rom };
 int stateromnow = snesrom;
 int statenow = selectconsole;
 std::string  urltodownload = "";
@@ -114,10 +114,12 @@ int baseymain = 60;
 bool cascadeactivated = false;
 bool seevertical = true;
 bool fulldownloaded = false;
+bool loading = true;
 std::string containrom = "mario";
 std::string baserom = "https://the-eye.eu/public/rom/SNES/";
 std::string typerom = "Super Nintendo";
 std::string urldownload = "";
+std::string tosearch = "";
 #ifdef __SWITCH__
 std::string directoryrom = "sdmc:/RomsXShop/SNES/";
 #else
@@ -188,6 +190,7 @@ TTF_Font *gFont2 = NULL;
 TTF_Font *gFont3 = NULL;
 //Rendered texture
 LTexture gTextTexture;
+LTexture gTextTexture2;
 LTexture Farest;
 LTexture Heart;
 LTexture Pagemanga;
@@ -439,6 +442,7 @@ void close()
 {
 	//Free loaded images
 	gTextTexture.free();
+	gTextTexture2.free();
 	Farest.free();
 	Heart.free();
 	TPreview.free();
@@ -642,6 +646,7 @@ int downloaddata(void* data)
 	downloadfile(arraychapter[selectchapter], directorydownload);
 	return 0;
 }
+
 void reloadrom()
 {
 	arraymain.clear();
@@ -675,7 +680,42 @@ void reloadrom()
 		}
 		initroms++;
 }}
-
+int reloadromdata(void* data)
+{
+	
+	std::string sourceRoms = gethtml(baserom);
+	int initcode = sourceRoms.find("<h1>Index of /public/rom/");
+	int endcode = sourceRoms.find("</body>", initcode);
+	int initroms = 0;
+	int endroms;
+	int initderoms, endderoms;
+	sourceRoms = sourceRoms.substr(initcode, endcode - initcode);
+	loading = false;
+	while (initroms != -1) {
+		initroms = sourceRoms.find("<a href=\"", initroms);
+		if (initroms == -1) { break; }
+		initroms = initroms + 9;
+		endroms = sourceRoms.find("\"", initroms);
+		initderoms = sourceRoms.find("\">", endroms);
+		initderoms = initderoms + 2;
+		endderoms = sourceRoms.find("</a>", initderoms);
+		//std::cout << baserom << sourceRoms.substr(initroms,endroms - initroms) << std::endl;
+		if (sourceRoms.substr(initroms, endroms - initroms) != ("../") && sourceRoms.substr(initroms, endroms - initroms) != ("Nintendo%20Gameboy%20Advance%20Video/") && sourceRoms.substr(initroms, endroms - initroms) != ("Extras/") && sourceRoms.substr(initroms, endroms - initroms) != ("links.txt"))
+		{
+			std::string completenamerom = sourceRoms.substr(initderoms, endderoms - initderoms);
+			replace(completenamerom, "&gt;", "");
+			replace(completenamerom, "&amp;", "");
+			std::string completeurlrom = baserom + sourceRoms.substr(initroms, endroms - initroms);
+			arraymain.push_back(completenamerom);
+			arraychapter.push_back(completeurlrom);
+			arraynamedown.push_back(sourceRoms.substr(initroms, endroms - initroms));
+		}
+		initroms++;
+	}
+	
+	
+	return 0;
+}
 int case_insensitive_match(std::string s1, std::string s2) {
 	//convert s1 and s2 into lower case strings
 	transform(s1.begin(), s1.end(), s1.begin(), ::tolower);
@@ -722,6 +762,46 @@ void reloadromfiltred(std::string filtred)
 		}
 		initroms++;
 }}
+
+int reloadromfiltreddata(void* data)
+{
+	
+	std::string sourceRoms = gethtml(baserom);
+	int initcode = sourceRoms.find("<h1>Index of /public/rom/");
+	int endcode = sourceRoms.find("</body>", initcode);
+	int initroms = 0;
+	int endroms;
+	int initderoms, endderoms;
+	sourceRoms = sourceRoms.substr(initcode, endcode - initcode);
+	loading = false;
+	while (initroms != -1) {
+		initroms = sourceRoms.find("<a href=\"", initroms);
+		if (initroms == -1) { break; }
+		initroms = initroms + 9;
+		endroms = sourceRoms.find("\"", initroms);
+		initderoms = sourceRoms.find("\">", endroms);
+		initderoms = initderoms + 2;
+		endderoms = sourceRoms.find("</a>", initderoms);
+		//std::cout << baserom << sourceRoms.substr(initroms,endroms - initroms) << std::endl;
+		if (sourceRoms.substr(initroms, endroms - initroms) != ("../"))
+		{
+
+			std::string completenamerom = sourceRoms.substr(initderoms, endderoms - initderoms);
+			replace(completenamerom, "&gt;", "");
+			replace(completenamerom, "&amp;", "");
+			std::string completeurlrom = baserom + sourceRoms.substr(initroms, endroms - initroms);
+
+			if (case_insensitive_match(completenamerom, tosearch))
+			{
+				arraymain.push_back(completenamerom);
+				arraychapter.push_back(completeurlrom);
+				arraynamedown.push_back(sourceRoms.substr(initroms, endroms - initroms));
+			}
+		}
+		initroms++;
+	}
+	return 0;
+}
 int main(int argc, char **argv)
 
 {
@@ -754,6 +834,9 @@ int main(int argc, char **argv)
 	}
 	if (stat("sdmc:/RomsXShop/PSXNTSC", &st) == -1) {
 		mkdir("sdmc:/RomsXShop/PSXNTSC", 0777);
+	}
+	if (stat("sdmc:/RomsXShop/PSXNTSCJ", &st) == -1) {
+		mkdir("sdmc:/RomsXShop/PSXNTSCJ", 0777);
 	}
 	if (stat("sdmc:/RomsXShop/PSXPAL", &st) == -1) {
 		mkdir("sdmc:/RomsXShop/PSXPAL", 0777);
@@ -789,6 +872,7 @@ int main(int argc, char **argv)
 	arrayconsole.push_back("Nintendo NES");
 	arrayconsole.push_back("Sega Genesis");
 	arrayconsole.push_back("PlayStation NTSC");
+	arrayconsole.push_back("PlayStation NTSC-J");
 	arrayconsole.push_back("PlayStation PAL");
 	arrayconsole.push_back("Nintendo 64");
 	arrayconsole.push_back("PC ENGINE");
@@ -890,7 +974,8 @@ int main(int argc, char **argv)
 #endif // SWITCH
 
 	SDL_Thread* threadID = NULL;
-
+	SDL_Thread* threadID2 = NULL;
+	SDL_Thread* threadID3 = NULL;
 	//reloadrom();
 
 	
@@ -1214,6 +1299,10 @@ int main(int argc, char **argv)
 			switch (statenow)
 			{
 			case selectmanga:
+				loading = true;
+				arraymain.clear();
+				arraychapter.clear();
+				arraynamedown.clear();
 				char *buf = (char*)malloc(256);
 #ifdef __SWITCH__
 				strcpy(buf, Keyboard_GetText("ROM Name (example: mario)", ""));
@@ -1221,7 +1310,12 @@ int main(int argc, char **argv)
 
 
 				std::string tempbus(buf);
-				reloadromfiltred(tempbus);
+				tosearch = tempbus;
+				if (tosearch != "")
+				{
+					threadID3 = SDL_CreateThread(reloadromfiltreddata, "jkthread3", (void*)NULL);
+				}
+				//reloadromfiltred(tempbus);
 
 				break;
 			}
@@ -1249,6 +1343,10 @@ int main(int argc, char **argv)
 				break;
 
 			case selectconsole:
+				loading = true;
+				arraymain.clear();
+				arraychapter.clear();
+				arraynamedown.clear();
 				statenow = selectmanga;
 				selectchapter = 0;
 
@@ -1259,7 +1357,7 @@ int main(int argc, char **argv)
 
 					typerom = "Super Nintendo";
 					baserom = "https://the-eye.eu/public/rom/SNES/";
-					reloadrom();
+					threadID2 = SDL_CreateThread(reloadromdata, "jkthread2", (void*)NULL);
 #ifdef __SWITCH__
 					directoryrom = "sdmc:/RomsXShop/SNES/";
 
@@ -1272,7 +1370,7 @@ int main(int argc, char **argv)
 
 					typerom = "GameBoy Advance";
 					baserom = "https://the-eye.eu/public/rom/Nintendo%20Gameboy%20Advance/";
-					reloadrom();
+					threadID2 = SDL_CreateThread(reloadromdata, "jkthread2", (void*)NULL);
 #ifdef __SWITCH__
 					directoryrom = "sdmc:/RomsXShop/GBA/";
 
@@ -1286,7 +1384,7 @@ int main(int argc, char **argv)
 
 					typerom = "GameBoy Color";
 					baserom = "https://the-eye.eu/public/rom/Nintendo%20Gameboy%20Color/";
-					reloadrom();
+					threadID2 = SDL_CreateThread(reloadromdata, "jkthread2", (void*)NULL);
 #ifdef __SWITCH__
 					directoryrom = "sdmc:/RomsXShop/GBC/";
 
@@ -1303,7 +1401,7 @@ int main(int argc, char **argv)
 
 					typerom = "GameBoy";
 					baserom = "https://the-eye.eu/public/rom/Nintendo%20Gameboy/";
-					reloadrom();
+					threadID2 = SDL_CreateThread(reloadromdata, "jkthread2", (void*)NULL);
 #ifdef __SWITCH__
 					directoryrom = "sdmc:/RomsXShop/GB/";
 
@@ -1320,7 +1418,7 @@ int main(int argc, char **argv)
 
 					typerom = "Nintendo Entertainment System";
 					baserom = "https://the-eye.eu/public/rom/NES/";
-					reloadrom();
+					threadID2 = SDL_CreateThread(reloadromdata, "jkthread2", (void*)NULL);
 #ifdef __SWITCH__
 					directoryrom = "sdmc:/RomsXShop/NES/";
 
@@ -1337,7 +1435,7 @@ int main(int argc, char **argv)
 
 					typerom = "Sega Genesis";
 					baserom = "https://the-eye.eu/public/rom/Sega%20Genesis/";
-					reloadrom();
+					threadID2 = SDL_CreateThread(reloadromdata, "jkthread2", (void*)NULL);
 #ifdef __SWITCH__
 					directoryrom = "sdmc:/RomsXShop/GENESIS/";
 
@@ -1354,7 +1452,7 @@ int main(int argc, char **argv)
 
 					typerom = "PlayStation NTSC";
 					baserom = "https://the-eye.eu/public/rom/Playstation/Games/NTSC/";
-					reloadrom();
+					threadID2 = SDL_CreateThread(reloadromdata, "jkthread2", (void*)NULL);
 #ifdef __SWITCH__
 					directoryrom = "sdmc:/RomsXShop/PSXNTSC/";
 
@@ -1366,12 +1464,29 @@ int main(int argc, char **argv)
 
 					break;
 
+				case psxntscj:
+
+
+					typerom = "PlayStation NTSC-J";
+					baserom = "https://the-eye.eu/public/rom/Playstation/Games/NTSC-J/";
+					threadID2 = SDL_CreateThread(reloadromdata, "jkthread2", (void*)NULL);
+#ifdef __SWITCH__
+					directoryrom = "sdmc:/RomsXShop/PSXNTSCJ/";
+
+#else
+					directoryrom = "C:/respaldo2017/C++/RomsXShop/Debug/PSXNTSCJ/";
+
+#endif // SWITCH
+
+
+					break;
+
 				case psxpal:
 
 
 					typerom = "PlayStation PAL";
 					baserom = "https://the-eye.eu/public/rom/Playstation/Games/PAL/";
-					reloadrom();
+					threadID2 = SDL_CreateThread(reloadromdata, "jkthread2", (void*)NULL);
 #ifdef __SWITCH__
 					directoryrom = "sdmc:/RomsXShop/PSXPAL/";
 
@@ -1383,12 +1498,13 @@ int main(int argc, char **argv)
 
 					break;
 
+
 				case n64rom:
 
 
 					typerom = "Nintendo 64";
 					baserom = "https://the-eye.eu/public/rom/Nintendo%2064/Roms/";
-					reloadrom();
+					threadID2 = SDL_CreateThread(reloadromdata, "jkthread2", (void*)NULL);
 #ifdef __SWITCH__
 					directoryrom = "sdmc:/RomsXShop/N64/";
 
@@ -1405,7 +1521,7 @@ int main(int argc, char **argv)
 
 					typerom = "PCEngine";
 					baserom = "https://the-eye.eu/public/rom/NEC%20PC%20Engine%20TurboGrafx%2016/";
-					reloadrom();
+					threadID2 = SDL_CreateThread(reloadromdata, "jkthread2", (void*)NULL);
 #ifdef __SWITCH__
 					directoryrom = "sdmc:/RomsXShop/PCENGINE/";
 
@@ -1422,7 +1538,7 @@ int main(int argc, char **argv)
 
 					typerom = "Neo Geo";
 					baserom = "https://the-eye.eu/public/rom/SNK%20Neo%20Geo/";
-					reloadrom();
+					threadID2 = SDL_CreateThread(reloadromdata, "jkthread2", (void*)NULL);
 #ifdef __SWITCH__
 					directoryrom = "sdmc:/RomsXShop/NEOGEO/";
 
@@ -1439,7 +1555,7 @@ int main(int argc, char **argv)
 
 					typerom = "Sega Master System";
 					baserom = "https://the-eye.eu/public/rom/Sega%20Master%20System/";
-					reloadrom();
+					threadID2 = SDL_CreateThread(reloadromdata, "jkthread2", (void*)NULL);
 #ifdef __SWITCH__
 					directoryrom = "sdmc:/RomsXShop/SEGAMASTERSYSTEM/";
 
@@ -1456,7 +1572,7 @@ int main(int argc, char **argv)
 
 					typerom = "DreamCast";
 					baserom = "https://the-eye.eu/public/rom/Sega%20Dreamcast/";
-					reloadrom();
+					threadID2 = SDL_CreateThread(reloadromdata, "jkthread2", (void*)NULL);
 #ifdef __SWITCH__
 					directoryrom = "sdmc:/RomsXShop/DREAMCAST/";
 
@@ -1473,7 +1589,7 @@ int main(int argc, char **argv)
 
 					typerom = "Commodore 64";
 					baserom = "https://the-eye.eu/public/rom/Commodore%2064/";
-					reloadrom();
+
 #ifdef __SWITCH__
 					directoryrom = "sdmc:/RomsXShop/COMMODORE64/";
 
@@ -1481,7 +1597,7 @@ int main(int argc, char **argv)
 					directoryrom = "C:/respaldo2017/C++/RomsXShop/Debug/COMMODORE64/";
 
 #endif // SWITCH
-
+					threadID2 = SDL_CreateThread(reloadromdata, "jkthread2", (void*)NULL);
 
 					break;
 						}
@@ -1489,10 +1605,6 @@ int main(int argc, char **argv)
 				break;
 
 					}
-
-
-
-
 
 
 		}
@@ -1667,6 +1779,10 @@ int main(int argc, char **argv)
 						break;
 					
 					case selectconsole:
+						loading = true;
+						arraymain.clear();
+						arraychapter.clear();
+						arraynamedown.clear();
 						statenow = selectmanga;
 						selectchapter = 0;
 
@@ -1677,7 +1793,7 @@ int main(int argc, char **argv)
 
 							typerom = "Super Nintendo";
 							baserom = "https://the-eye.eu/public/rom/SNES/";
-							reloadrom();
+							threadID2 = SDL_CreateThread(reloadromdata, "jkthread2", (void*)NULL);
 #ifdef __SWITCH__
 							directoryrom = "sdmc:/RomsXShop/SNES/";
 
@@ -1690,7 +1806,7 @@ int main(int argc, char **argv)
 							
 							typerom = "GameBoy Advance";
 							baserom = "https://the-eye.eu/public/rom/Nintendo%20Gameboy%20Advance/";
-							reloadrom();
+							threadID2 = SDL_CreateThread(reloadromdata, "jkthread2", (void*)NULL);
 #ifdef __SWITCH__
 							directoryrom = "sdmc:/RomsXShop/GBA/";
 
@@ -1704,7 +1820,7 @@ int main(int argc, char **argv)
 							
 							typerom = "GameBoy Color";
 							baserom = "https://the-eye.eu/public/rom/Nintendo%20Gameboy%20Color/";
-							reloadrom();
+							threadID2 = SDL_CreateThread(reloadromdata, "jkthread2", (void*)NULL);
 #ifdef __SWITCH__
 							directoryrom = "sdmc:/RomsXShop/GBC/";
 
@@ -1721,7 +1837,7 @@ int main(int argc, char **argv)
 							
 							typerom = "GameBoy";
 							baserom = "https://the-eye.eu/public/rom/Nintendo%20Gameboy/";
-							reloadrom();
+							threadID2 = SDL_CreateThread(reloadromdata, "jkthread2", (void*)NULL);
 #ifdef __SWITCH__
 							directoryrom = "sdmc:/RomsXShop/GB/";
 
@@ -1738,7 +1854,7 @@ int main(int argc, char **argv)
 							
 							typerom = "Nintendo Entertainment System";
 							baserom = "https://the-eye.eu/public/rom/NES/";
-							reloadrom();
+							threadID2 = SDL_CreateThread(reloadromdata, "jkthread2", (void*)NULL);
 #ifdef __SWITCH__
 							directoryrom = "sdmc:/RomsXShop/NES/";
 
@@ -1755,7 +1871,7 @@ int main(int argc, char **argv)
 							
 							typerom = "Sega Genesis";
 							baserom = "https://the-eye.eu/public/rom/Sega%20Genesis/";
-							reloadrom();
+							threadID2 = SDL_CreateThread(reloadromdata, "jkthread2", (void*)NULL);
 #ifdef __SWITCH__
 							directoryrom = "sdmc:/RomsXShop/GENESIS/";
 
@@ -1772,7 +1888,7 @@ int main(int argc, char **argv)
 							
 							typerom = "PlayStation NTSC";
 							baserom = "https://the-eye.eu/public/rom/Playstation/Games/NTSC/";
-							reloadrom();
+							threadID2 = SDL_CreateThread(reloadromdata, "jkthread2", (void*)NULL);
 #ifdef __SWITCH__
 							directoryrom = "sdmc:/RomsXShop/PSXNTSC/";
 
@@ -1784,12 +1900,29 @@ int main(int argc, char **argv)
 
 							break;
 
+						case psxntscj:
+
+
+							typerom = "PlayStation NTSC-J";
+							baserom = "https://the-eye.eu/public/rom/Playstation/Games/NTSC-J/";
+							threadID2 = SDL_CreateThread(reloadromdata, "jkthread2", (void*)NULL);
+#ifdef __SWITCH__
+							directoryrom = "sdmc:/RomsXShop/PSXNTSCJ/";
+
+#else
+							directoryrom = "C:/respaldo2017/C++/RomsXShop/Debug/PSXNTSCJ/";
+
+#endif // SWITCH
+
+
+							break;
+
 						case psxpal:
 
 							
 							typerom = "PlayStation PAL";
 							baserom = "https://the-eye.eu/public/rom/Playstation/Games/PAL/";
-							reloadrom();
+							threadID2 = SDL_CreateThread(reloadromdata, "jkthread2", (void*)NULL);
 #ifdef __SWITCH__
 							directoryrom = "sdmc:/RomsXShop/PSXPAL/";
 
@@ -1807,7 +1940,7 @@ int main(int argc, char **argv)
 
 							typerom = "Nintendo 64";
 							baserom = "https://the-eye.eu/public/rom/Nintendo%2064/Roms/";
-							reloadrom();
+							threadID2 = SDL_CreateThread(reloadromdata, "jkthread2", (void*)NULL);
 #ifdef __SWITCH__
 							directoryrom = "sdmc:/RomsXShop/N64/";
 
@@ -1824,7 +1957,7 @@ int main(int argc, char **argv)
 
 							typerom = "PCEngine";
 							baserom = "https://the-eye.eu/public/rom/NEC%20PC%20Engine%20TurboGrafx%2016/";
-							reloadrom();
+							threadID2 = SDL_CreateThread(reloadromdata, "jkthread2", (void*)NULL);
 #ifdef __SWITCH__
 							directoryrom = "sdmc:/RomsXShop/PCENGINE/";
 
@@ -1841,7 +1974,7 @@ int main(int argc, char **argv)
 
 							typerom = "Neo Geo";
 							baserom = "https://the-eye.eu/public/rom/SNK%20Neo%20Geo/";
-							reloadrom();
+							threadID2 = SDL_CreateThread(reloadromdata, "jkthread2", (void*)NULL);
 #ifdef __SWITCH__
 							directoryrom = "sdmc:/RomsXShop/NEOGEO/";
 
@@ -1858,7 +1991,7 @@ int main(int argc, char **argv)
 
 							typerom = "Sega Master System";
 							baserom = "https://the-eye.eu/public/rom/Sega%20Master%20System/";
-							reloadrom();
+							threadID2 = SDL_CreateThread(reloadromdata, "jkthread2", (void*)NULL);
 #ifdef __SWITCH__
 							directoryrom = "sdmc:/RomsXShop/SEGAMASTERSYSTEM/";
 
@@ -1875,7 +2008,7 @@ int main(int argc, char **argv)
 
 							typerom = "DreamCast";
 							baserom = "https://the-eye.eu/public/rom/Sega%20Dreamcast/";
-							reloadrom();
+							threadID2 = SDL_CreateThread(reloadromdata, "jkthread2", (void*)NULL);
 #ifdef __SWITCH__
 							directoryrom = "sdmc:/RomsXShop/DREAMCAST/";
 
@@ -1892,7 +2025,7 @@ int main(int argc, char **argv)
 
 							typerom = "Commodore 64";
 							baserom = "https://the-eye.eu/public/rom/Commodore%2064/";
-							reloadrom();
+							
 #ifdef __SWITCH__
 							directoryrom = "sdmc:/RomsXShop/COMMODORE64/";
 
@@ -1900,7 +2033,7 @@ int main(int argc, char **argv)
 							directoryrom = "C:/respaldo2017/C++/RomsXShop/Debug/COMMODORE64/";
 
 #endif // SWITCH
-
+							threadID2 = SDL_CreateThread(reloadromdata, "jkthread2", (void*)NULL);
 
 							break;
 						}
@@ -1917,11 +2050,8 @@ int main(int argc, char **argv)
 
 				
 				case SDLK_MINUS:
-					//reloadromfiltred();
-					selectchapter = 0;
-
-
-					baseymain = 60;
+					
+					
 					break;
 				case SDLK_b:
 					switch (statenow)
@@ -1942,7 +2072,30 @@ int main(int argc, char **argv)
 					break;
 
 				case SDLK_l:
-				
+					switch (statenow)
+					{
+					case selectconsole:
+						loading = true;
+						arraymain.clear();
+					arraychapter.clear();
+					arraynamedown.clear();
+					statenow = selectmanga;
+					selectchapter = 0;
+
+					baseymain = 60;
+					typerom = "Super Nintendo";
+					baserom = "https://the-eye.eu/public/rom/SNES/";
+					threadID2 = SDL_CreateThread(reloadromdata, "jkthread2", (void*)NULL);
+#ifdef __SWITCH__
+					directoryrom = "sdmc:/RomsXShop/SNES/";
+
+#else
+					directoryrom = "C:/respaldo2017/C++/RomsXShop/Debug/SNES/";
+
+#endif // SWITCH
+						break;
+					}
+					
 				break;
 
 				case SDLK_r:
@@ -2079,11 +2232,11 @@ int main(int argc, char **argv)
 
 		gTextTexture.loadFromRenderedText(gFont, "\"A\" to select console.", textColor);
 		gTextTexture.render(basexmain, SCREEN_HEIGHT - 30);
-		gTextTexture.loadFromRenderedText(gFont, "If it freezes, restart.", textColor);
-		gTextTexture.render(SCREEN_WIDTH - 380, SCREEN_HEIGHT - 60);
+		//gTextTexture.loadFromRenderedText(gFont, "If it freezes, restart.", textColor);
+		//gTextTexture.render(SCREEN_WIDTH - 380, SCREEN_HEIGHT - 60);
 		gTextTexture.loadFromRenderedText(gFont, "#RenunciaPiñera", textColor);
 		gTextTexture.render(SCREEN_WIDTH - 270, SCREEN_HEIGHT - 35);
-		gTextTexture.loadFromRenderedText(gFont2, "RomsXShop 1.1", textColor);
+		gTextTexture.loadFromRenderedText(gFont2, "RomsXShop 1.2 (Final)", textColor);
 
 		gTextTexture.render(SCREEN_WIDTH / 2 - gTextTexture.getWidth() / 2, 10);
 
@@ -2218,7 +2371,15 @@ int main(int argc, char **argv)
 				
 				gTextTexture.render(SCREEN_WIDTH/2 - gTextTexture.getWidth()/2 , 10);
 
-		
+				if (loading == true) {
+					{SDL_Rect fillRect = { 0,  SCREEN_HEIGHT / 2 - 26, 1280, 52 };
+					SDL_SetRenderDrawColor(gRenderer, 255, 255, 255, 255);
+
+					SDL_RenderFillRect(gRenderer, &fillRect); }
+					gTextTexture2.loadFromRenderedText(gFont2, "Cargando, espere por favor...", textColor);
+
+					gTextTexture2.render(SCREEN_WIDTH / 2 - gTextTexture2.getWidth() / 2, SCREEN_HEIGHT / 2 -gTextTexture2.getHeight()/2);
+				}
 
 			break;
 		
@@ -2242,6 +2403,20 @@ int main(int argc, char **argv)
 
 	}
 
+	if (NULL == threadID2) {
+		printf("SDL_CreateThread failed: %s\n", SDL_GetError());
+	}
+	else {
+		SDL_WaitThread(threadID2, NULL);
+
+	}
+	if (NULL == threadID3) {
+		printf("SDL_CreateThread failed: %s\n", SDL_GetError());
+	}
+	else {
+		SDL_WaitThread(threadID3, NULL);
+
+	}
 	//Free resources and close SDL
 #ifdef __SWITCH__
 	socketExit();
