@@ -90,7 +90,7 @@ bool	isFileExist(const char *file)
 const int SCREEN_WIDTH = 1280;
 const int SCREEN_HEIGHT = 720;
 enum states { selectmanga, readmanga,selectconsole };
-enum statesrom { snesrom, gbarom,gbcrom,gbrom,nesrom,genesisrom,psxntsc,psxpal };
+enum statesrom { snesrom, gbarom,gbcrom,gbrom,nesrom,genesisrom,psxntsc,psxpal,n64rom,pcenginerom,neogeorom,mastersystemrom,dreamcastrom,commodore64rom };
 int stateromnow = snesrom;
 int statenow = selectconsole;
 std::string  urltodownload = "";
@@ -758,6 +758,24 @@ int main(int argc, char **argv)
 	if (stat("sdmc:/RomsXShop/PSXPAL", &st) == -1) {
 		mkdir("sdmc:/RomsXShop/PSXPAL", 0777);
 	}
+	if (stat("sdmc:/RomsXShop/N64", &st) == -1) {
+		mkdir("sdmc:/RomsXShop/N64", 0777);
+	}
+	if (stat("sdmc:/RomsXShop/PCENGINE", &st) == -1) {
+		mkdir("sdmc:/RomsXShop/PCENGINE", 0777);
+	}
+	if (stat("sdmc:/RomsXShop/NEOGEO", &st) == -1) {
+		mkdir("sdmc:/RomsXShop/NEOGEO", 0777);
+	}
+	if (stat("sdmc:/RomsXShop/SEGAMASTERSYSTEM", &st) == -1) {
+		mkdir("sdmc:/RomsXShop/SEGAMASTERSYSTEM", 0777);
+	}
+	if (stat("sdmc:/RomsXShop/DREAMCAST", &st) == -1) {
+		mkdir("sdmc:/RomsXShop/DREAMCAST", 0777);
+	}
+	if (stat("sdmc:/RomsXShop/COMMODORE64", &st) == -1) {
+		mkdir("sdmc:/RomsXShop/COMMODORE64", 0777);
+	}
 #endif 
 	int basex = 0;
 	int basey = 0;
@@ -772,6 +790,12 @@ int main(int argc, char **argv)
 	arrayconsole.push_back("Sega Genesis");
 	arrayconsole.push_back("PlayStation NTSC");
 	arrayconsole.push_back("PlayStation PAL");
+	arrayconsole.push_back("Nintendo 64");
+	arrayconsole.push_back("PC ENGINE");
+	arrayconsole.push_back("Neo Geo");
+	arrayconsole.push_back("Sega Master System");
+	arrayconsole.push_back("DreamCast");
+	arrayconsole.push_back("Commodore 64");
 	//Start up SDL and create window
 	//Initialize SDL
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) < 0)
@@ -921,7 +945,7 @@ int main(int argc, char **argv)
 
 		if (kDown & KEY_PLUS)
 		{
-			quit = 1;
+			//quit = 1;
 			
 		}
 		if (kHeld & KEY_LSTICK_DOWN)
@@ -1358,6 +1382,108 @@ int main(int argc, char **argv)
 
 
 					break;
+
+				case n64rom:
+
+
+					typerom = "Nintendo 64";
+					baserom = "https://the-eye.eu/public/rom/Nintendo%2064/Roms/";
+					reloadrom();
+#ifdef __SWITCH__
+					directoryrom = "sdmc:/RomsXShop/N64/";
+
+#else
+					directoryrom = "C:/respaldo2017/C++/RomsXShop/Debug/N64/";
+
+#endif // SWITCH
+
+
+					break;
+
+				case pcenginerom:
+
+
+					typerom = "PCEngine";
+					baserom = "https://the-eye.eu/public/rom/NEC%20PC%20Engine%20TurboGrafx%2016/";
+					reloadrom();
+#ifdef __SWITCH__
+					directoryrom = "sdmc:/RomsXShop/PCENGINE/";
+
+#else
+					directoryrom = "C:/respaldo2017/C++/RomsXShop/Debug/PCENGINE/";
+
+#endif // SWITCH
+
+
+					break;
+
+				case neogeorom:
+
+
+					typerom = "Neo Geo";
+					baserom = "https://the-eye.eu/public/rom/SNK%20Neo%20Geo/";
+					reloadrom();
+#ifdef __SWITCH__
+					directoryrom = "sdmc:/RomsXShop/NEOGEO/";
+
+#else
+					directoryrom = "C:/respaldo2017/C++/RomsXShop/Debug/NEOGEO/";
+
+#endif // SWITCH
+
+
+					break;
+
+				case mastersystemrom:
+
+
+					typerom = "Sega Master System";
+					baserom = "https://the-eye.eu/public/rom/Sega%20Master%20System/";
+					reloadrom();
+#ifdef __SWITCH__
+					directoryrom = "sdmc:/RomsXShop/SEGAMASTERSYSTEM/";
+
+#else
+					directoryrom = "C:/respaldo2017/C++/RomsXShop/Debug/SEGAMASTERSYSTEM/";
+
+#endif // SWITCH
+
+
+					break;
+
+				case dreamcastrom:
+
+
+					typerom = "DreamCast";
+					baserom = "https://the-eye.eu/public/rom/Sega%20Dreamcast/";
+					reloadrom();
+#ifdef __SWITCH__
+					directoryrom = "sdmc:/RomsXShop/DREAMCAST/";
+
+#else
+					directoryrom = "C:/respaldo2017/C++/RomsXShop/Debug/DREAMCAST/";
+
+#endif // SWITCH
+
+
+					break;
+
+				case commodore64rom:
+
+
+					typerom = "Commodore 64";
+					baserom = "https://the-eye.eu/public/rom/Commodore%2064/";
+					reloadrom();
+#ifdef __SWITCH__
+					directoryrom = "sdmc:/RomsXShop/COMMODORE64/";
+
+#else
+					directoryrom = "C:/respaldo2017/C++/RomsXShop/Debug/COMMODORE64/";
+
+#endif // SWITCH
+
+
+					break;
 						}
 
 				break;
@@ -1674,6 +1800,109 @@ int main(int argc, char **argv)
 
 
 							break;
+
+
+						case n64rom:
+
+
+							typerom = "Nintendo 64";
+							baserom = "https://the-eye.eu/public/rom/Nintendo%2064/Roms/";
+							reloadrom();
+#ifdef __SWITCH__
+							directoryrom = "sdmc:/RomsXShop/N64/";
+
+#else
+							directoryrom = "C:/respaldo2017/C++/RomsXShop/Debug/N64/";
+
+#endif // SWITCH
+
+
+							break;
+
+						case pcenginerom:
+
+
+							typerom = "PCEngine";
+							baserom = "https://the-eye.eu/public/rom/NEC%20PC%20Engine%20TurboGrafx%2016/";
+							reloadrom();
+#ifdef __SWITCH__
+							directoryrom = "sdmc:/RomsXShop/PCENGINE/";
+
+#else
+							directoryrom = "C:/respaldo2017/C++/RomsXShop/Debug/PCENGINE/";
+
+#endif // SWITCH
+
+
+							break;
+
+						case neogeorom:
+
+
+							typerom = "Neo Geo";
+							baserom = "https://the-eye.eu/public/rom/SNK%20Neo%20Geo/";
+							reloadrom();
+#ifdef __SWITCH__
+							directoryrom = "sdmc:/RomsXShop/NEOGEO/";
+
+#else
+							directoryrom = "C:/respaldo2017/C++/RomsXShop/Debug/NEOGEO/";
+
+#endif // SWITCH
+
+
+							break;
+
+						case mastersystemrom:
+
+
+							typerom = "Sega Master System";
+							baserom = "https://the-eye.eu/public/rom/Sega%20Master%20System/";
+							reloadrom();
+#ifdef __SWITCH__
+							directoryrom = "sdmc:/RomsXShop/SEGAMASTERSYSTEM/";
+
+#else
+							directoryrom = "C:/respaldo2017/C++/RomsXShop/Debug/SEGAMASTERSYSTEM/";
+
+#endif // SWITCH
+
+
+							break;
+
+						case dreamcastrom:
+
+
+							typerom = "DreamCast";
+							baserom = "https://the-eye.eu/public/rom/Sega%20Dreamcast/";
+							reloadrom();
+#ifdef __SWITCH__
+							directoryrom = "sdmc:/RomsXShop/DREAMCAST/";
+
+#else
+							directoryrom = "C:/respaldo2017/C++/RomsXShop/Debug/DREAMCAST/";
+
+#endif // SWITCH
+
+
+							break;
+
+						case commodore64rom:
+
+
+							typerom = "Commodore 64";
+							baserom = "https://the-eye.eu/public/rom/Commodore%2064/";
+							reloadrom();
+#ifdef __SWITCH__
+							directoryrom = "sdmc:/RomsXShop/COMMODORE64/";
+
+#else
+							directoryrom = "C:/respaldo2017/C++/RomsXShop/Debug/COMMODORE64/";
+
+#endif // SWITCH
+
+
+							break;
 						}
 						
 						break;
@@ -1848,13 +2077,13 @@ int main(int argc, char **argv)
 
 		textColor = { 50, 50, 50 };
 
-		gTextTexture.loadFromRenderedText(gFont, "\"A\" to select console.    Ver: 1.0b  ", textColor);
+		gTextTexture.loadFromRenderedText(gFont, "\"A\" to select console.", textColor);
 		gTextTexture.render(basexmain, SCREEN_HEIGHT - 30);
-		gTextTexture.loadFromRenderedText(gFont, "This is a beta, if it freezes, restart.", textColor);
-		gTextTexture.render(basexmain, SCREEN_HEIGHT - 60);
+		gTextTexture.loadFromRenderedText(gFont, "If it freezes, restart.", textColor);
+		gTextTexture.render(SCREEN_WIDTH - 380, SCREEN_HEIGHT - 60);
 		gTextTexture.loadFromRenderedText(gFont, "#RenunciaPiñera", textColor);
-		gTextTexture.render(SCREEN_WIDTH - 270, SCREEN_HEIGHT - 60);
-		gTextTexture.loadFromRenderedText(gFont2, typerom, textColor);
+		gTextTexture.render(SCREEN_WIDTH - 270, SCREEN_HEIGHT - 35);
+		gTextTexture.loadFromRenderedText(gFont2, "RomsXShop 1.1", textColor);
 
 		gTextTexture.render(SCREEN_WIDTH / 2 - gTextTexture.getWidth() / 2, 10);
 
