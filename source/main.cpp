@@ -1299,10 +1299,7 @@ int main(int argc, char **argv)
 			switch (statenow)
 			{
 			case selectmanga:
-				loading = true;
-				arraymain.clear();
-				arraychapter.clear();
-				arraynamedown.clear();
+				
 				char *buf = (char*)malloc(256);
 #ifdef __SWITCH__
 				strcpy(buf, Keyboard_GetText("ROM Name (example: mario)", ""));
@@ -1313,6 +1310,13 @@ int main(int argc, char **argv)
 				tosearch = tempbus;
 				if (tosearch != "")
 				{
+					selectchapter = 0;
+
+					baseymain = 60;
+					loading = true;
+					arraymain.clear();
+					arraychapter.clear();
+					arraynamedown.clear();
 					threadID3 = SDL_CreateThread(reloadromfiltreddata, "jkthread3", (void*)NULL);
 				}
 				//reloadromfiltred(tempbus);
@@ -2236,7 +2240,7 @@ int main(int argc, char **argv)
 		//gTextTexture.render(SCREEN_WIDTH - 380, SCREEN_HEIGHT - 60);
 		gTextTexture.loadFromRenderedText(gFont, "#RenunciaPiñera", textColor);
 		gTextTexture.render(SCREEN_WIDTH - 270, SCREEN_HEIGHT - 35);
-		gTextTexture.loadFromRenderedText(gFont2, "RomsXShop 1.2 (Final)", textColor);
+		gTextTexture.loadFromRenderedText(gFont2, "RomsXShop 1.2.1 (Final)", textColor);
 
 		gTextTexture.render(SCREEN_WIDTH / 2 - gTextTexture.getWidth() / 2, 10);
 
